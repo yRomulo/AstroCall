@@ -16,10 +16,12 @@ import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function CallPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params);
+  const astrologerId = sessionId;
   const livekitServerUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
   const [token, setToken] = useState<string | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const { user, isUserLoading: userLoading } = useUser();
+  const firestoreSessionId = user ? `${sessionId}__${user.uid}` : null;
   const db = useFirestore();
   const [callEnded, setCallEnded] = useState(false);
   const [sessionSummary, setSessionSummary] = useState<string>("");
@@ -58,11 +60,13 @@ export default function CallPage({ params }: { params: Promise<{ sessionId: stri
 
         setToken(data.token);
 
-        const sessionRef = doc(db, "sessions", sessionId);
+        if (!firestoreSessionId) return;
+
+        const sessionRef = doc(db, "sessions", firestoreSessionId);
         const sessionData = {
-          id: sessionId,
+          id: firestoreSessionId,
           userId: user.uid,
-          astrologerId: sessionId,
+          astrologerId,
           status: "active",
           startedAt: serverTimestamp(),
         };
@@ -81,11 +85,14 @@ export default function CallPage({ params }: { params: Promise<{ sessionId: stri
     };
 
     startSession();
-  }, [sessionId, user, userLoading, db, router, livekitServerUrl]);
+  }, [sessionId, astrologerId, firestoreSessionId, user, userLoading, db, router, livekitServerUrl]);
 
   const handleDisconnected = async () => {
     setCallEnded(true);
-    const sessionRef = doc(db, "sessions", sessionId);
+
+    if (!firestoreSessionId) return;
+
+    const sessionRef = doc(db, "sessions", firestoreSessionId);
     
     updateDoc(sessionRef, {
       status: "ended",
@@ -140,7 +147,7 @@ export default function CallPage({ params }: { params: Promise<{ sessionId: stri
           <h1 className="font-headline text-3xl font-bold">Session Complete</h1>
           <p className="text-muted-foreground">Thank you for connecting with your guide today.</p>
           
-          <RatingModal sessionId={sessionId} />
+          <RatingModal sessionId={firestoreSessionId ?? sessionId} astrologerId={astrologerId} />
           
           {sessionSummary && <ReflectionPrompts summary={sessionSummary} />}
           

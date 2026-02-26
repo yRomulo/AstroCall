@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
-export function RatingModal({ sessionId }: { sessionId: string }) {
+export function RatingModal({ sessionId, astrologerId }: { sessionId: string; astrologerId: string }) {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -32,7 +32,7 @@ export function RatingModal({ sessionId }: { sessionId: string }) {
     const reviewData = {
       id: reviewRef.id,
       sessionId,
-      astrologerId: sessionId,
+      astrologerId,
       userId: user.uid,
       rating,
       comment,

@@ -74,11 +74,17 @@ NEXT_PUBLIC_LIVEKIT_URL=wss://SEU-PROJETO.livekit.cloud
 LIVEKIT_API_KEY=APIxxxxxxxxxxxxxxxx
 LIVEKIT_API_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
+# Configuração pública do Firebase (SDK web)
+NEXT_PUBLIC_FIREBASE_API_KEY=YOUR_FIREBASE_WEB_API_KEY
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=seu-projeto.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=seu-projeto
+NEXT_PUBLIC_FIREBASE_APP_ID=1:1234567890:web:abcdef1234567890
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=1234567890
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
+
 # Necessário para fluxos Genkit/Google AI
 GOOGLE_API_KEY=sua_chave_google_ai
 ```
-
-> Observação: o projeto atualmente possui configuração Firebase em `src/firebase/config.ts`.
 
 ## 🧪 Scripts disponíveis
 
