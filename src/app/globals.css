@@ -1,0 +1,49 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 255 15% 15%;
+    --foreground: 0 0% 98%;
+    --card: 255 15% 18%;
+    --card-foreground: 0 0% 98%;
+    --popover: 255 15% 15%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 255 60% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 255 15% 25%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 255 15% 22%;
+    --muted-foreground: 255 10% 70%;
+    --accent: 225 75% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 255 15% 25%;
+    --input: 255 15% 25%;
+    --ring: 255 60% 65%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom AstroCall Styles */
+.celestial-gradient {
+  background: radial-gradient(circle at top right, rgba(180, 132, 236, 0.15), transparent 40%),
+              radial-gradient(circle at bottom left, rgba(111, 159, 227, 0.1), transparent 40%);
+}
+
+.glass-card {
+  @apply bg-card/50 backdrop-blur-md border border-white/10;
+}

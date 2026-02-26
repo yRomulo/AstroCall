@@ -1,0 +1,261 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user of the AstroCall application, storing their basic profile information and assigned role.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity. This corresponds to the Firebase Authentication User ID (UID)."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address, used for communication and login.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "The display name of the user."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the application, either 'user' or 'astrologer'."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user profile was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "role",
+        "createdAt"
+      ]
+    },
+    "AstrologerProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AstrologerProfile",
+      "type": "object",
+      "description": "Contains additional profile details specific to an astrologer, extending a UserProfile. An astrologer's ID is the same as their corresponding UserProfile ID.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AstrologerProfile entity. This is the same ID as the corresponding UserProfile's 'id'. (Relationship: UserProfile 1:1 AstrologerProfile)"
+        },
+        "isOnline": {
+          "type": "boolean",
+          "description": "Indicates whether the astrologer is currently online and available for calls."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL to the astrologer's public profile photo.",
+          "format": "uri"
+        },
+        "bio": {
+          "type": "string",
+          "description": "A short biography of the astrologer, describing their background and specialties."
+        },
+        "languages": {
+          "type": "array",
+          "description": "A list of languages the astrologer is proficient in.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "averageRating": {
+          "type": "number",
+          "description": "The average rating received by the astrologer, derived from user reviews. This is a computed field."
+        }
+      },
+      "required": [
+        "id",
+        "isOnline",
+        "photoUrl",
+        "bio",
+        "languages"
+      ]
+    },
+    "Session": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Session",
+      "type": "object",
+      "description": "Represents a single video/voice call session between a user and an astrologer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Session entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who initiated or participated in the session. (Relationship: UserProfile 1:N Session)"
+        },
+        "astrologerId": {
+          "type": "string",
+          "description": "Reference to the AstrologerProfile who conducted the session. (Relationship: AstrologerProfile 1:N Session)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the session (e.g., 'pending', 'active', 'ended', 'cancelled')."
+        },
+        "startedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the session officially started.",
+          "format": "date-time"
+        },
+        "endedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the session officially ended. This field is null until the session concludes.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "astrologerId",
+        "status",
+        "startedAt"
+      ]
+    },
+    "Review": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Review",
+      "type": "object",
+      "description": "Stores user feedback and ratings for a completed session with an astrologer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Review entity."
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "Reference to the Session this review pertains to. (Relationship: Session 1:1 Review)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who submitted this review. (Relationship: UserProfile 1:N Review)"
+        },
+        "astrologerId": {
+          "type": "string",
+          "description": "Reference to the AstrologerProfile that was reviewed. (Relationship: AstrologerProfile 1:N Review)"
+        },
+        "rating": {
+          "type": "number",
+          "description": "The star rating given by the user, typically on a scale (e.g., 1 to 5)."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Detailed textual feedback or comment provided by the user. This field is optional."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the review was submitted.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "sessionId",
+        "userId",
+        "astrologerId",
+        "rating",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/user_profiles/{userId}",
+        "definition": {
+          "entityName": "userProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information, including their assigned role. Each document's ID corresponds to the Firebase Authentication UID, establishing direct ownership. Administrators can also manage these profiles.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, matching their Firebase Authentication UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/astrologer_profiles/{astrologerId}",
+        "definition": {
+          "entityName": "astrologerProfile",
+          "schema": {
+            "$ref": "#/backend/entities/AstrologerProfile"
+          },
+          "description": "Contains additional details specific to an astrologer. Documents in this collection are publicly readable to support the 'Astrologer List' feature. The document ID matches the Astrologer's Firebase UID, and astrologers can update their own status and profile information.",
+          "params": [
+            {
+              "name": "astrologerId",
+              "description": "The unique identifier of the astrologer, matching their Firebase Authentication UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/sessions/{sessionId}",
+        "definition": {
+          "entityName": "session",
+          "schema": {
+            "$ref": "#/backend/entities/Session"
+          },
+          "description": "Records details of video/voice call sessions between users and astrologers. Includes denormalized 'userId' and 'astrologerId' fields for authorization independence, allowing participants to read and update their respective sessions without 'get()' calls.",
+          "params": [
+            {
+              "name": "sessionId",
+              "description": "The unique identifier for the session."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/reviews/{reviewId}",
+        "definition": {
+          "entityName": "review",
+          "schema": {
+            "$ref": "#/backend/entities/Review"
+          },
+          "description": "Stores user feedback and ratings for completed sessions. Includes denormalized 'userId' and 'astrologerId' fields to enable direct authorization checks, allowing users to read their own reviews and astrologers to read reviews about them without 'get()' calls.",
+          "params": [
+            {
+              "name": "reviewId",
+              "description": "The unique identifier for the review."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{adminId}",
+        "definition": {
+          "entityName": "roles_admin",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "A lightweight collection used for Database Access Control (DBAC) to identify administrators. The existence of a document with a user's UID in this collection grants administrative privileges across the application. Documents are typically managed by backend processes or an isolated admin interface.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of an administrator, matching their Firebase Authentication UID."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure for AstroCall is designed with a strong emphasis on Authorization Independence, Structural Segregation, and Query As Permissions (QAPs) to ensure security, scalability, and debuggability. Each core entity—UserProfile, AstrologerProfile, Session, and Review—is represented as a top-level collection to simplify security rules and enable efficient querying.\n\n**Authorization Independence via Denormalization:**\n*   For `Session` and `Review` documents, the `userId` and `astrologerId` fields are explicitly denormalized within each document. This critical design choice allows security rules to evaluate access permissions (`read`, `write`) by directly comparing `request.auth.uid` against `resource.data.userId` or `resource.data.astrologerId`. This completely eliminates the need for `get()` calls in security rules, which typically introduce complexity, performance overhead, and challenges for atomic operations (transactions/batches). For example, a user can only read their own sessions because the rule checks `request.auth.uid == resource.data.userId` without needing to look up the user's role or ownership from a parent document.\n*   For `UserProfile` and `AstrologerProfile`, the document ID (`{userId}` or `{astrologerId}`) directly corresponds to the Firebase Authentication UID. This inherently provides ownership context, allowing rules to simply check `request.auth.uid == userId` for direct ownership, again avoiding `get()` calls.\n\n**Structural Segregation for QAPs (Query As Permissions):**\n*   **`/astrologer_profiles`:** This collection houses astrologer-specific public data (`isOnline`, `photoUrl`, `bio`, `languages`). It is designed to be publicly readable, facilitating the 'Astrologer List' feature where users can browse available astrologers. The 'online' status allows for efficient queries (`where('isOnline', '==', true)`) directly against this collection, which the rules permit for public reads, thus adhering to QAPs.\n*   **`/user_profiles`:** This collection stores fundamental user data, including their `role`. It's primarily owned by the `userId` but can be managed by administrators. The segregation ensures that user profiles, which have different access patterns (private reads/updates by owner, admin access) than public astrologer profiles, are handled distinctly.\n*   **`/sessions` and `/reviews`:** These collections are crucial for the 'User Dashboard' (past calls & reviews) and 'Astrologer Control Panel' (today's calls, reviews about them). By denormalizing `userId` and `astrologerId` into each document, these collections can be queried efficiently using `where('userId', '==', request.auth.uid)` or `where('astrologerId', '==', request.auth.uid)`. The security rules are written to allow `list` operations only when the query constrains the results to documents where the `userId` or `astrologerId` field matches the authenticated user's UID. This prevents users from reading arbitrary sessions or reviews and ensures that rules are not acting as filters on broader queries.\n\n**DBAC (Database Access Control) for Global Roles:**\n*   The `/roles_admin/{adminId}` collection implements DBAC using the 'existence over content' principle. An administrator is identified by the presence of their UID as a document ID in this collection. Security rules can check `exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))` to grant elevated permissions without relying on custom claims or complex document lookups. This clearly separates administrative access logic from general user/astrologer permissions."
+  }
+}

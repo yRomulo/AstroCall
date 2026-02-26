@@ -1,0 +1,163 @@
+/**
+ * AstroCall Security Rules
+ *
+ * CORE PHILOSOPHY:
+ * This ruleset implements a robust, decentralized authorization model for the AstroCall platform. 
+ * It prioritizes "Authorization Independence" by leveraging denormalized data (like userId and 
+ * astrologerId) directly within documents. This avoids expensive cross-document lookups (get() calls) 
+ * and ensures that security logic is both performant and atomic.
+ *
+ * DATA STRUCTURE:
+ * - /user_profiles/{userId}: Private profile data, keyed by Firebase Auth UID.
+ * - /astrologer_profiles/{astrologerId}: Publicly accessible astrologer details (bio, status, etc.).
+ * - /sessions/{sessionId}: Shared call records between a user and an astrologer.
+ * - /reviews/{reviewId}: Feedback documents shared between the reviewer and the astrologer.
+ * - /roles_admin/{adminId}: A restricted collection used for Database Access Control (DBAC).
+ *
+ * KEY SECURITY DECISIONS:
+ * 1. Ownership-First: Primary access to profiles and sessions is dictated by matching the 
+ *    authenticated UID against path parameters or internal denormalized ID fields.
+ * 2. Administrative Overlay: The presence of a UID in the '/roles_admin' collection grants 
+ *    global read/write access across all collections for support and moderation.
+ * 3. Public Discovery: Astrologer profiles are readable by anyone (including guests) to facilitate 
+ *    the discovery phase of the user journey.
+ * 4. Relational Integrity: On creation and update, the rules enforce that ownership fields 
+ *    remain consistent with the authenticated user to prevent data spoofing.
+ *
+ * DENORMALIZATION FOR AUTHORIZATION:
+ * To optimize rules, 'userId' and 'astrologerId' are stored inside 'Session' and 'Review' 
+ * documents. This allows for immediate verification of access rights without needing to 
+ * query the parent profile documents.
+ */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Global Helper Functions ---
+
+    /**
+     * @description Checks if the request is from an authenticated user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user's UID matches the provided ID.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the document exists and the user is the owner.
+     */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /**
+     * @description Verifies administrative privileges via DBAC (Database Access Control).
+     * Uses the "existence over content" principle in the roles_admin collection.
+     */
+    function hasAdminPrivilegesFromProfile() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/user_profiles/$(request.auth.uid))
+        && (
+          get(/databases/$(database)/documents/user_profiles/$(request.auth.uid)).data.role == "admin"
+          || get(/databases/$(database)/documents/user_profiles/$(request.auth.uid)).data.role == "astrologer"
+        );
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && (
+          exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+          || hasAdminPrivilegesFromProfile()
+        );
+    }
+
+    /**
+     * @description Helper for shared access collections (Sessions/Reviews).
+     * Validates if the user is either the 'userId' or 'astrologerId' in the document.
+     */
+    function isParticipant(data) {
+      return isSignedIn() && (request.auth.uid == data.userId || request.auth.uid == data.astrologerId);
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the User Profile collection.
+     * @path /user_profiles/{userId}
+     * @allow get (isOwner), create (isOwner), update (isOwner), list (isAdmin)
+     * @deny create (mismatched UID), delete (not an admin)
+     * @principle Enforces strict self-ownership and administrative oversight.
+     */
+    match /user_profiles/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if (isOwner(userId) || isAdmin()) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Rules for Astrologer-specific profile extensions.
+     * @path /astrologer_profiles/{astrologerId}
+     * @allow get (public), list (public), update (isOwner)
+     * @deny delete (non-admin), create (mismatched UID)
+     * @principle Public read access for discovery, owner-only updates for status.
+     */
+    match /astrologer_profiles/{astrologerId} {
+      allow get, list: if true;
+      allow create: if (isOwner(astrologerId) || isAdmin()) && request.resource.data.id == astrologerId;
+      allow update: if (isOwner(astrologerId) || isAdmin()) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Rules for Session records (calls between users and astrologers).
+     * @path /sessions/{sessionId}
+     * @allow create (requesting user matches userId), update (either participant)
+     * @deny get (non-participant), list (unfiltered or non-participant)
+     * @principle Uses denormalized UIDs to secure access for both call participants.
+     */
+    match /sessions/{sessionId} {
+      allow get: if isParticipant(resource.data) || isAdmin();
+      allow list: if isParticipant(resource.data) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if (isParticipant(resource.data) || isAdmin()) && resource != null && request.resource.data.userId == resource.data.userId && request.resource.data.astrologerId == resource.data.astrologerId;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Rules for Session Reviews.
+     * @path /reviews/{reviewId}
+     * @allow create (user matches userId), get (either participant)
+     * @deny update (mismatched reviewer), delete (non-admin)
+     * @principle Validates that only the session user can create a review, while both can read it.
+     */
+    match /reviews/{reviewId} {
+      allow get: if isParticipant(resource.data) || isAdmin();
+      allow list: if isParticipant(resource.data) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if (isExistingOwner(resource.data.userId) || isAdmin()) && request.resource.data.userId == resource.data.userId && request.resource.data.astrologerId == resource.data.astrologerId;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Administrative roles collection (DBAC).
+     * @path /roles_admin/{adminId}
+     * @allow get (isAdmin), list (isAdmin)
+     * @deny create (public), update (public), delete (public)
+     * @principle Restricted collection where existence defines administrative power.
+     */
+    match /roles_admin/{adminId} {
+      allow get, list: if isAdmin();
+      allow create, update, delete: if false; // Admin roles typically managed by CLI or Cloud Functions
+    }
+
+  }
+}

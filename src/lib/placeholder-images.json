@@ -1,0 +1,22 @@
+{
+  "placeholderImages": [
+    {
+      "id": "astro-1",
+      "description": "Experienced Vedic Astrologer",
+      "imageUrl": "https://images.unsplash.com/photo-1714249158162-02f2f5fe1ae9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxJbmRpYW4lMjBhc3Ryb2xvZ2VyfGVufDB8fHx8MTc3MjA1OTM0Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Indian astrologer"
+    },
+    {
+      "id": "astro-2",
+      "description": "Western Tarot Reader",
+      "imageUrl": "https://images.unsplash.com/photo-1739373849036-251a4a466c73?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bXlzdGljYWwlMjB3b21hbnxlbnwwfHx8fDE3NzIwNTkzNDZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mystical woman"
+    },
+    {
+      "id": "astro-3",
+      "description": "Chinese Zodiac Expert",
+      "imageUrl": "https://images.unsplash.com/photo-1587610212621-fdc5c149153a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxDaGluZXNlJTIwbWFzdGVyfGVufDB8fHx8MTc3MjA1OTM0Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Chinese master"
+    }
+  ]
+}

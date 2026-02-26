@@ -1,0 +1,48 @@
+
+import { AccessToken } from "livekit-server-sdk";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(req: NextRequest) {
+  const room = req.nextUrl.searchParams.get("room");
+  const username = req.nextUrl.searchParams.get("username");
+
+  if (!room || !username) {
+    return NextResponse.json(
+      { error: 'Missing "room" or "username" query parameter' },
+      { status: 400 }
+    );
+  }
+
+  const apiKey = process.env.LIVEKIT_API_KEY ?? process.env.LIVEKIT_KEY;
+  const apiSecret = process.env.LIVEKIT_API_SECRET ?? process.env.LIVEKIT_SECRET;
+
+  const missingVars: string[] = [];
+  if (!apiKey) {
+    missingVars.push("LIVEKIT_API_KEY (ou LIVEKIT_KEY)");
+  }
+  if (!apiSecret) {
+    missingVars.push("LIVEKIT_API_SECRET (ou LIVEKIT_SECRET)");
+  }
+
+  if (missingVars.length > 0) {
+    return NextResponse.json(
+      {
+        error: `Server misconfigured: variáveis ausentes -> ${missingVars.join(", ")}`,
+      },
+      { status: 500 }
+    );
+  }
+
+  const at = new AccessToken(apiKey, apiSecret, {
+    identity: username,
+  });
+
+  at.addGrant({
+    roomJoin: true,
+    room: room,
+    canPublish: true,
+    canSubscribe: true,
+  });
+
+  return NextResponse.json({ token: await at.toJwt() });
+}
