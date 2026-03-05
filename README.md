@@ -78,13 +78,21 @@ LIVEKIT_API_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 NEXT_PUBLIC_FIREBASE_API_KEY=YOUR_FIREBASE_WEB_API_KEY
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=seu-projeto.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=seu-projeto
+# Use apenas o nome do bucket (sem https:// e sem gs://)
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=seu-projeto.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_APP_ID=1:1234567890:web:abcdef1234567890
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=1234567890
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
 
+# Alternativa de upload sem Firebase Storage (Cloudinary)
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=seu_cloud_name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=seu_unsigned_preset
+
 # Necessário para fluxos Genkit/Google AI
 GOOGLE_API_KEY=sua_chave_google_ai
 ```
+
+Se `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` e `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` estiverem definidos, o app usa Cloudinary para avatar/banner automaticamente.
 
 ## 🧪 Scripts disponíveis
 
@@ -103,6 +111,49 @@ npm run dev
 ```
 
 Abra: `http://localhost:9002`
+
+## 🪣 Upload de imagem (Firebase Storage + CORS)
+
+Se upload de avatar/banner falhar no local com erro de **CORS** (preflight bloqueado), configure CORS no bucket do Cloud Storage.
+
+1. Descubra o bucket do projeto (normalmente igual a `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`).
+2. Crie um arquivo `cors.json` com:
+
+```json
+[
+	{
+		"origin": ["http://localhost:9002"],
+		"method": ["GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS"],
+		"responseHeader": ["Content-Type", "Authorization", "x-goog-resumable"],
+		"maxAgeSeconds": 3600
+	}
+]
+```
+
+3. Aplique no bucket (Google Cloud SDK):
+
+```bash
+gcloud storage buckets update gs://SEU_BUCKET --cors-file=cors.json
+```
+
+Depois, aguarde alguns minutos e tente o upload novamente.
+
+## ☁️ Alternativa sem Firebase Storage (Cloudinary)
+
+Se o Firebase Storage não puder ser habilitado, você pode usar Cloudinary para upload de imagens:
+
+1. Crie uma conta no Cloudinary.
+2. Em **Settings > Upload**, crie um **Upload Preset** com modo **Unsigned**.
+3. Preencha no `.env.local`:
+
+```dotenv
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=seu_cloud_name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=seu_unsigned_preset
+```
+
+4. Reinicie o `npm run dev`.
+
+Com isso, o formulário de perfil continua o mesmo e os uploads passam a ir para o Cloudinary.
 
 ## 🔐 Modelo de dados e regras
 

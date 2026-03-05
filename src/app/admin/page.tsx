@@ -61,7 +61,7 @@ export default function AdminPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
           <ShieldCheck className="h-8 w-8 text-primary" />
-          <h1 className="font-headline text-3xl font-bold">Admin Management</h1>
+          <h1 className="font-headline text-3xl font-bold text-primary">Admin Management</h1>
         </div>
 
         <Card className="glass-card">

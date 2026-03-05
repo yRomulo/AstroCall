@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Star } from "lucide-react";
 import { useFirestore, useUser } from "@/firebase";
-import { collection, doc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, getDocs, query, setDoc, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -54,6 +54,27 @@ export function RatingModal({ sessionId, astrologerId }: { sessionId: string; as
           requestResourceData: { rating, comment }
         }));
       });
+
+      try {
+        const reviewsQuery = query(collection(db, "reviews"), where("astrologerId", "==", astrologerId));
+        const reviewsSnapshot = await getDocs(reviewsQuery);
+
+        const totalRatings = reviewsSnapshot.docs.reduce((acc, currentDoc) => {
+          const value = currentDoc.data()?.rating;
+          return acc + (typeof value === "number" ? value : 0);
+        }, 0);
+
+        const reviewsCount = reviewsSnapshot.docs.length;
+        const averageRating = reviewsCount > 0 ? Number((totalRatings / reviewsCount).toFixed(1)) : null;
+
+        const astrologerProfileRef = doc(db, "astrologer_profiles", astrologerId);
+        await updateDoc(astrologerProfileRef, {
+          rating: averageRating,
+          reviewsCount,
+        });
+      } catch {
+        // Atualização agregada é opcional no cliente (normalmente bloqueada para usuários comuns pelas regras).
+      }
 
       setSubmitted(true);
       toast({ title: "Review Submitted", description: "Your feedback helps the community!" });

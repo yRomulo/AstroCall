@@ -7,6 +7,7 @@ import { Sparkles, User, LogOut } from "lucide-react";
 import { useAuth, useFirestore, useUser, useDoc, useMemoFirebase } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { doc } from "firebase/firestore";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ export function Navbar() {
 
   const { data: userData } = useDoc(userDocRef);
   const role = userData?.role;
+  const avatarUrl = userData?.photoUrl;
 
   const handleSignOut = () => auth && signOut(auth);
 
@@ -65,11 +67,18 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full border border-primary/20">
-                  <User className="h-5 w-5" />
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={avatarUrl} alt={user.email ?? "User"} />
+                    <AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem className="font-medium">{user.email}</DropdownMenuItem>
+                <DropdownMenuItem asChild className="font-medium">
+                  <Link href="/profile">{user.email}</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out

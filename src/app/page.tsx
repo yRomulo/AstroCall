@@ -17,7 +17,7 @@ export default function Home() {
 
   const { data: astrologersData, isLoading: loading } = useCollection(astrologersQuery);
 
-  const presetAstrologers = [
+ /*  const presetAstrologers = [
     {
       id: "astro-1",
       name: "Dr. Aditya Sharma",
@@ -45,9 +45,22 @@ export default function Home() {
       isOnline: false,
       rating: 4.7
     }
-  ];
+  ]; */
 
-  const astrologers = [...(astrologersData ?? []), ...presetAstrologers];
+  const astrologers = (() => {
+    const byId = new Map<string, any>();
+
+    /* for (const astro of presetAstrologers) {
+      byId.set(astro.id, astro);
+    } */
+
+    for (const astro of astrologersData ?? []) {
+      const previous = byId.get(astro.id);
+      byId.set(astro.id, previous ? { ...previous, ...astro } : astro);
+    }
+
+    return Array.from(byId.values());
+  })();
 
   return (
     <div className="flex flex-col min-h-screen">
